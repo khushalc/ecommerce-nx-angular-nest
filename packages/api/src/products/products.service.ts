@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma, PricingMode, Product } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './dto';
-import { computeProductPrice, computeStockDisplay } from './pricing';
+import { serializeProduct } from './serializer';
 
 type ProductWithCategory = Product & {
   category: { id: string; slug: string; name: string; pricingMode: PricingMode };
@@ -12,30 +12,8 @@ type ProductWithCategory = Product & {
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── Serialization ───────────────────────────────────────────────────
-
   private serialize(p: ProductWithCategory) {
-    const price = computeProductPrice(p, p.category.pricingMode);
-    const stock = computeStockDisplay(p.stock, p.lowStockThreshold, p.allowBackorder);
-    return {
-      id: p.id,
-      slug: p.slug,
-      sku: p.sku,
-      name: p.name,
-      description: p.description,
-      images: p.images,
-      isFresh: p.isFresh,
-      isActive: p.isActive,
-      category: p.category,
-      metal: p.metal,
-      purity: p.purity,
-      weightGrams: p.weightGrams ? Number(p.weightGrams) : null,
-      makingPct: p.makingPct ? Number(p.makingPct) : null,
-      mrp: p.mrp ? Number(p.mrp) : null,
-      specialDiscount: p.specialDiscount ? Number(p.specialDiscount) : 0,
-      price,
-      stockDisplay: stock,
-    };
+    return serializeProduct(p);
   }
 
   // ── Public ──────────────────────────────────────────────────────────

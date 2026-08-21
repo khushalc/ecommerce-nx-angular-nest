@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto';
+import { serializeProduct } from '../products/serializer';
 
 @Injectable()
 export class CategoriesService {
@@ -28,7 +29,11 @@ export class CategoriesService {
       },
     });
     if (!category) throw new NotFoundException(`Category "${slug}" not found`);
-    return category;
+    const { products, ...rest } = category;
+    return {
+      ...rest,
+      products: products.map((p) => serializeProduct(p, category.pricingMode)),
+    };
   }
 
   // ── Admin ───────────────────────────────────────────────────────────

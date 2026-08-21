@@ -6,7 +6,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (visible()) {
-      <div class="bg-ink text-bg text-caption">
+      <aside role="region" aria-label="Announcement" class="bg-ink text-bg text-caption">
         <div class="container-page flex items-center justify-between py-xs">
           <button
             type="button"
@@ -20,7 +20,7 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
           </p>
           <span class="w-4"></span>
         </div>
-      </div>
+      </aside>
     }
   `,
 })

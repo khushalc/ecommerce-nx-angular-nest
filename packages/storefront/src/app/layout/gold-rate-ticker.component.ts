@@ -10,7 +10,7 @@ interface Rate { label: string; value: number; unit: string; direction: 'up' | '
   imports: [DecimalPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="bg-bg-muted text-body-sm text-ink-muted border-b border-line">
+    <aside role="region" aria-label="Live metal rates" class="bg-bg-muted text-body-sm text-ink-muted border-b border-line">
       <div class="container-page flex items-center gap-xl overflow-x-auto py-xs">
         @for (r of rates; track r.label) {
           <span class="whitespace-nowrap flex items-center gap-xs">
@@ -26,7 +26,7 @@ interface Rate { label: string; value: number; unit: string; direction: 'up' | '
           </span>
         }
       </div>
-    </div>
+    </aside>
   `,
 })
 export class GoldRateTickerComponent {

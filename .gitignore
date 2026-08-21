@@ -55,13 +55,12 @@ Thumbs.db
 .env.local
 .env.*.local
 
-# playwright
+# playwright + verifier
 /playwright-report
 /test-results
 /blob-report
 /playwright/.cache
-/screenshots/actual
-/screenshots/diff
+/verify-report
 
 # prisma
 /prisma/migrations/dev.db*

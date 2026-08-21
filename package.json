@@ -17,7 +17,8 @@
     "dev:admin": "nx serve admin",
     "build": "nx run-many -t build",
     "lint": "nx run-many -t lint",
-    "test": "nx run-many -t test"
+    "test": "nx run-many -t test",
+    "verify:ui": "tsx scripts/verify-ui.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -30,6 +31,7 @@
     "@angular/cli": "~22.0.4",
     "@angular/compiler-cli": "~22.0.4",
     "@angular/language-service": "~22.0.4",
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
@@ -53,9 +55,13 @@
     "@typescript-eslint/utils": "^8.58.0",
     "angular-eslint": "^22.0.0",
     "autoprefixer": "^10.5.4",
+    "cheerio": "^1.2.0",
+    "chrome-launcher": "^1.2.1",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
+    "lighthouse": "^13.4.1",
     "nx": "23.1.1",
+    "playwright": "^1.62.1",
     "postcss": "^8.5.26",
     "prettier": "^3.8.1",
     "prisma": "^6.19.3",
