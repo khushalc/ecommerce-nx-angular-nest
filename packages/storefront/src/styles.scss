@@ -1,0 +1,86 @@
+/* ─── Fonts ────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── Tailwind ─────────────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design tokens as CSS variables (Tailwind-parallel for runtime access) ─ */
+:root {
+  --color-bg: #FAF6EF;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-muted: #F1EADD;
+  --color-ink: #1F1B16;
+  --color-ink-muted: #6B6355;
+  --color-ink-subtle: #A69C88;
+  --color-gold: #B8860B;
+  --color-gold-hover: #9E7409;
+  --color-gold-soft: #D4AF37;
+  --color-line: #E7DFCE;
+  --color-success: #2E7D32;
+  --color-warning: #B4820D;
+  --color-danger: #B71C1C;
+  --color-info: #0F5FA3;
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
+  --container-max: 1280px;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+
+  /* Money should always render with tabular numerals */
+  .num-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── Reusable component patterns ──────────────────────────────────────── */
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-container px-lg md:px-xl lg:px-2xl;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-sm rounded-none border border-gold bg-gold px-lg py-md
+           text-body-sm uppercase tracking-wide text-bg font-medium transition
+           hover:bg-gold-hover hover:border-gold-hover
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-soft focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-sm rounded-none border border-line bg-transparent px-lg py-md
+           text-body-sm uppercase tracking-wide text-ink font-medium transition
+           hover:border-ink hover:bg-bg-muted
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-soft focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-xs rounded-full border border-line bg-bg-elevated px-sm py-xs text-caption uppercase tracking-wide;
+  }
+
+  .badge-gold      { @apply border-gold-soft text-gold; }
+  .badge-success   { @apply border-success text-success; }
+  .badge-warning   { @apply border-warning text-warning; }
+  .badge-danger    { @apply border-danger text-danger; }
+
+  .hairline { @apply border-b border-line; }
+}

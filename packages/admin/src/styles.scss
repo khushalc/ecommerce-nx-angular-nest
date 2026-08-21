@@ -1,0 +1,73 @@
+/* ─── Fonts ────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ─── Tailwind ─────────────────────────────────────────────────────────── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Design tokens ────────────────────────────────────────────────────── */
+:root {
+  --color-bg: #F7F7F8;
+  --color-bg-elevated: #FFFFFF;
+  --color-bg-muted: #EEEEF1;
+  --color-ink: #1A1A1F;
+  --color-ink-muted: #5A5A64;
+  --color-ink-subtle: #9A9AA6;
+  --color-accent: #B8860B;
+  --color-line: #E4E4E8;
+  --sidebar-width: 240px;
+  --topbar-height: 56px;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans text-body-sm;
+  }
+
+  .num-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── Admin primitives ─────────────────────────────────────────────────── */
+@layer components {
+  .admin-btn {
+    @apply inline-flex items-center justify-center gap-sm rounded-md border border-line bg-bg-elevated px-md py-sm
+           text-body-sm text-ink font-medium transition
+           hover:bg-bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .admin-btn-primary {
+    @apply admin-btn border-accent bg-accent text-white hover:bg-accent-hover hover:border-accent-hover;
+  }
+
+  .admin-input {
+    @apply block w-full rounded-md border border-line bg-bg-elevated px-md py-sm text-body-sm text-ink
+           placeholder:text-ink-subtle
+           focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .admin-label {
+    @apply block text-caption uppercase tracking-wide text-ink-muted mb-xs;
+  }
+
+  .admin-card {
+    @apply rounded-lg border border-line bg-bg-elevated;
+  }
+
+  .admin-table {
+    @apply w-full border-collapse text-body-sm;
+    th { @apply text-left px-md py-sm bg-bg-muted text-caption uppercase tracking-wide text-ink-muted border-b border-line; }
+    td { @apply px-md py-sm border-b border-line; }
+    tr:hover td { @apply bg-bg-muted; }
+  }
+}

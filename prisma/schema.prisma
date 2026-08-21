@@ -1,0 +1,485 @@
+// e-com-shop Prisma schema
+// Full data model per PLAN.md §7 and §13. Phase 1 uses only: AdminUser, Category, Product.
+// The rest are stub tables so we don't rewrite migrations later.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────
+
+enum PricingMode {
+  LIVE_METAL_RATE
+  FIXED_MRP
+}
+
+enum Metal {
+  GOLD
+  SILVER
+  PLATINUM
+}
+
+enum Purity {
+  K14
+  K18
+  K22
+  K24
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  CATALOG_MANAGER
+  ORDER_MANAGER
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PACKED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  INITIATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  PAYU
+  COD
+}
+
+enum StockReason {
+  ORDER_PLACED
+  ORDER_CANCELLED
+  ORDER_RETURNED
+  PAYMENT_FAILED
+  ADMIN_ADJUSTMENT
+  INITIAL_LOAD
+  RECONCILIATION
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ─── Admin ──────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  fullName      String
+  role          AdminRole @default(CATALOG_MANAGER)
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  statusEvents  OrderStatusEvent[] @relation("AdminStatusEvents")
+  stockLedger   StockLedger[]      @relation("AdminStockLedger")
+}
+
+// ─── Catalog (Phase 1 active) ───────────────────────────────────────────
+
+model Category {
+  id            String       @id @default(uuid())
+  slug          String       @unique
+  name          String
+  description   String?
+  pricingMode   PricingMode
+  heroImageUrl  String?
+  sortOrder     Int          @default(0)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  products      Product[]
+  saleTargets   SaleTarget[]
+
+  @@index([isActive, sortOrder])
+}
+
+model Product {
+  id                 String    @id @default(uuid())
+  slug               String    @unique
+  sku                String    @unique
+  name               String
+  description        String?
+  category           Category  @relation(fields: [categoryId], references: [id])
+  categoryId         String
+  images             String[]
+  isActive           Boolean   @default(true)
+  isFresh            Boolean   @default(false)
+  specialDiscount    Decimal?  @db.Decimal(5, 2)     // % off, product-scoped
+
+  // Stock
+  stock              Int       @default(0)
+  lowStockThreshold  Int       @default(3)
+  allowBackorder     Boolean   @default(false)
+
+  // FIXED_MRP pricing
+  mrp                Decimal?  @db.Decimal(12, 2)
+
+  // LIVE_METAL_RATE pricing
+  metal              Metal?
+  purity             Purity?
+  weightGrams        Decimal?  @db.Decimal(8, 3)
+  makingPct          Decimal?  @db.Decimal(5, 2)
+  stoneValue         Decimal?  @db.Decimal(12, 2)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  saleTargets        SaleTarget[]
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  reviews            Review[]
+  wishlistItems      WishlistItem[]
+  stockLedger        StockLedger[]
+
+  @@index([categoryId, isActive])
+  @@index([isFresh, createdAt])
+}
+
+// ─── Metal rates (Phase 2) ──────────────────────────────────────────────
+
+model MetalRateDaily {
+  id           String   @id @default(uuid())
+  date         DateTime @db.Date
+  metal        Metal
+  purity       Purity
+  ratePerGram  Decimal  @db.Decimal(12, 2)
+  createdAt    DateTime @default(now())
+
+  @@unique([date, metal, purity])
+  @@index([metal, purity, date])
+}
+
+// ─── Sales & coupons (Phase 2) ──────────────────────────────────────────
+
+model Sale {
+  id            String       @id @default(uuid())
+  name          String
+  slug          String       @unique
+  description   String?
+  startsAt      DateTime
+  endsAt        DateTime
+  discountType  String       // "PERCENT" | "FLAT"
+  discountValue Decimal      @db.Decimal(12, 2)
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  targets       SaleTarget[]
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model SaleTarget {
+  id          String    @id @default(uuid())
+  sale        Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId      String
+  category    Category? @relation(fields: [categoryId], references: [id])
+  categoryId  String?
+  product     Product?  @relation(fields: [productId], references: [id])
+  productId   String?
+
+  @@unique([saleId, categoryId, productId])
+  @@index([categoryId])
+  @@index([productId])
+}
+
+model Coupon {
+  id                String   @id @default(uuid())
+  code              String   @unique
+  description       String?
+  discountType      String   // "PERCENT" | "FLAT"
+  discountValue     Decimal  @db.Decimal(12, 2)
+  minCartValue      Decimal? @db.Decimal(12, 2)
+  maxDiscount       Decimal? @db.Decimal(12, 2)
+  perCustomerCap    Int?
+  totalUsageCap     Int?
+  totalUsageCount   Int      @default(0)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+// ─── Customer (Phase 3) ─────────────────────────────────────────────────
+
+model Customer {
+  id            String    @id @default(uuid())
+  phone         String    @unique
+  email         String?   @unique
+  fullName      String?
+  isVerified    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  carts         Cart[]
+  orders        Order[]
+  reviews       Review[]
+  wishlist      WishlistItem[]
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  customer    Customer @relation(fields: [customerId], references: [id])
+  customerId  String
+  label       String?  // "Home" | "Office"
+  fullName    String
+  phone       String
+  line1       String
+  line2       String?
+  city        String
+  state       String
+  pincode     String
+  country     String   @default("IN")
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([customerId])
+}
+
+// ─── Cart (Phase 3) ─────────────────────────────────────────────────────
+
+model Cart {
+  id           String     @id @default(uuid())
+  customer     Customer?  @relation(fields: [customerId], references: [id])
+  customerId   String?
+  guestSessionId String?
+  items        CartItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([customerId])
+  @@index([guestSessionId])
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cartId     String
+  product    Product  @relation(fields: [productId], references: [id])
+  productId  String
+  qty        Int      @default(1)
+  addedAt    DateTime @default(now())
+
+  @@unique([cartId, productId])
+}
+
+// ─── Orders (Phase 3) ───────────────────────────────────────────────────
+
+model Order {
+  id              String      @id @default(uuid())
+  orderNumber     String      @unique                     // e.g. ES-2026-000123
+  customer        Customer    @relation(fields: [customerId], references: [id])
+  customerId      String
+  status          OrderStatus @default(PLACED)
+  subtotal        Decimal     @db.Decimal(12, 2)
+  discountTotal   Decimal     @db.Decimal(12, 2) @default(0)
+  gstTotal        Decimal     @db.Decimal(12, 2) @default(0)
+  shippingTotal   Decimal     @db.Decimal(12, 2) @default(0)
+  grandTotal      Decimal     @db.Decimal(12, 2)
+  shippingAddress Json                                    // snapshot
+  billingAddress  Json?
+  notes           String?
+  placedAt        DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items    OrderItem[]
+  payments Payment[]
+  shipment Shipment?
+  events   OrderStatusEvent[]
+
+  @@index([customerId, placedAt])
+  @@index([status, placedAt])
+}
+
+model OrderItem {
+  id               String   @id @default(uuid())
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId          String
+  product          Product  @relation(fields: [productId], references: [id])
+  productId        String
+  sku              String
+  nameSnapshot     String
+  imageSnapshot    String?
+  qty              Int
+  unitPrice        Decimal  @db.Decimal(12, 2)            // snapshot after discount
+  lineTotal        Decimal  @db.Decimal(12, 2)
+  pricingBreakdown Json?                                  // metal rate, making%, etc.
+
+  @@index([orderId])
+}
+
+model Payment {
+  id               String        @id @default(uuid())
+  order            Order         @relation(fields: [orderId], references: [id])
+  orderId          String
+  method           PaymentMethod
+  status           PaymentStatus @default(INITIATED)
+  amount           Decimal       @db.Decimal(12, 2)
+  gatewayOrderId   String?
+  gatewayPaymentId String?
+  rawPayload       Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  events           PaymentEvent[]
+
+  @@index([orderId])
+  @@index([status])
+}
+
+model PaymentEvent {
+  id             String   @id @default(uuid())
+  payment        Payment  @relation(fields: [paymentId], references: [id])
+  paymentId      String
+  gatewayEventId String   @unique                         // dedup key (Razorpay event.id, PayU txnId)
+  eventType      String
+  rawPayload     Json
+  receivedAt     DateTime @default(now())
+
+  @@index([paymentId, receivedAt])
+}
+
+model Shipment {
+  id             String    @id @default(uuid())
+  order          Order     @relation(fields: [orderId], references: [id])
+  orderId        String    @unique
+  courier        String
+  trackingNumber String
+  trackingUrl    String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model OrderStatusEvent {
+  id         String       @id @default(uuid())
+  order      Order        @relation(fields: [orderId], references: [id])
+  orderId    String
+  from       OrderStatus?
+  to         OrderStatus
+  actorType  String       // "SYSTEM" | "ADMIN" | "CUSTOMER" | "WEBHOOK"
+  actorId    String?
+  admin      AdminUser?   @relation("AdminStatusEvents", fields: [adminId], references: [id])
+  adminId    String?
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// ─── Inventory ledger (Phase 3) ─────────────────────────────────────────
+
+model StockLedger {
+  id            String      @id @default(uuid())
+  product       Product     @relation(fields: [productId], references: [id])
+  productId     String
+  delta         Int                                       // signed
+  reason        StockReason
+  referenceType String?                                   // "order" | "adjustment" | "return"
+  referenceId   String?
+  actorType     String
+  actorId       String?
+  admin         AdminUser?  @relation("AdminStockLedger", fields: [adminId], references: [id])
+  adminId       String?
+  note          String?
+  createdAt     DateTime    @default(now())
+
+  @@index([productId, createdAt])
+  @@index([referenceType, referenceId])
+}
+
+// ─── Idempotency (Phase 3) ──────────────────────────────────────────────
+
+model IdempotencyKey {
+  key          String   @id
+  scope        String
+  requestHash  String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+
+  @@unique([key, scope])
+  @@index([expiresAt])
+}
+
+// ─── Notifications (Phase 3) ────────────────────────────────────────────
+
+model Notification {
+  id           String   @id @default(uuid())
+  channel      String   // "EMAIL" | "SMS"
+  recipient    String   // email or phone
+  template     String
+  payload      Json
+  status       String   // "QUEUED" | "SENT" | "FAILED"
+  providerId   String?
+  attemptCount Int      @default(0)
+  lastError    String?
+  createdAt    DateTime @default(now())
+  sentAt       DateTime?
+
+  @@index([status, createdAt])
+}
+
+// ─── Reviews (Phase 4) ──────────────────────────────────────────────────
+
+model Review {
+  id          String       @id @default(uuid())
+  product     Product      @relation(fields: [productId], references: [id])
+  productId   String
+  customer    Customer     @relation(fields: [customerId], references: [id])
+  customerId  String
+  rating      Int
+  title       String?
+  body        String?
+  status      ReviewStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([productId, customerId])
+  @@index([productId, status])
+}
+
+// ─── Wishlist (Phase 4) ─────────────────────────────────────────────────
+
+model WishlistItem {
+  id          String   @id @default(uuid())
+  customer    Customer @relation(fields: [customerId], references: [id])
+  customerId  String
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   String
+  addedAt     DateTime @default(now())
+
+  @@unique([customerId, productId])
+  @@index([customerId, addedAt])
+}

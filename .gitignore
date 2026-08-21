@@ -48,3 +48,20 @@ Thumbs.db
 .nx/polygraph
 .nx/self-healing
 .nx/migrate-runs
+.angular
+
+# secrets
+.env
+.env.local
+.env.*.local
+
+# playwright
+/playwright-report
+/test-results
+/blob-report
+/playwright/.cache
+/screenshots/actual
+/screenshots/diff
+
+# prisma
+/prisma/migrations/dev.db*
