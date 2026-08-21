@@ -35,6 +35,16 @@ module.exports = {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'Menlo', 'monospace'],
       },
+      fontSize: {
+        'h1': ['1.875rem', { lineHeight: '2.25rem', fontWeight: '600' }],
+        'h2': ['1.5rem',   { lineHeight: '2rem',    fontWeight: '600' }],
+        'h3': ['1.25rem',  { lineHeight: '1.75rem', fontWeight: '600' }],
+        'h4': ['1.125rem', { lineHeight: '1.75rem', fontWeight: '500' }],
+        'body-lg': ['1rem',     { lineHeight: '1.5rem' }],
+        'body':    ['0.9375rem',{ lineHeight: '1.375rem' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'caption': ['0.75rem',  { lineHeight: '1rem', letterSpacing: '0.05em', fontWeight: '500' }],
+      },
       spacing: {
         xs: '0.25rem',
         sm: '0.5rem',
