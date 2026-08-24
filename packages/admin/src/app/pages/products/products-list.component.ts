@@ -235,7 +235,7 @@ export class ProductsListComponent {
 
   toggleOne(id: string) {
     const s = new Set(this.selectedIds());
-    s.has(id) ? s.delete(id) : s.add(id);
+    if (s.has(id)) s.delete(id); else s.add(id);
     this.selectedIds.set(s);
   }
 

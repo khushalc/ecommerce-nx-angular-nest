@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
 
 import { CategoriesService } from '../../data/categories.service';
 import { ProductsService } from '../../data/products.service';

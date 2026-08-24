@@ -1,4 +1,4 @@
-import { DOCUMENT, Inject, Injectable } from '@angular/core';
+import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { ProductSummary } from '../data/api.types';
 
@@ -14,11 +14,9 @@ const PUBLIC_URL = 'http://localhost:4200';
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
-  constructor(
-    private readonly title: Title,
-    private readonly meta: Meta,
-    @Inject(DOCUMENT) private readonly doc: Document,
-  ) {}
+  private readonly title = inject(Title);
+  private readonly meta = inject(Meta);
+  private readonly doc = inject<Document>(DOCUMENT);
 
   applyBasic(input: SeoInput) {
     const fullTitle = input.title.includes(BRAND) ? input.title : `${input.title} — ${BRAND}`;
