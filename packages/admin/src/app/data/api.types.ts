@@ -166,3 +166,60 @@ export interface SaleTargetInput {
 export interface BulkResult {
   updated: number;
 }
+
+// ── Coupons ────────────────────────────────────────────────────────────
+
+export type CouponType = 'PERCENT' | 'FLAT';
+
+export interface Coupon {
+  id: string;
+  code: string;
+  description: string | null;
+  discountType: CouponType;
+  discountValue: number | string;
+  minCartValue: number | string | null;
+  maxDiscount: number | string | null;
+  perCustomerCap: number | null;
+  totalUsageCap: number | null;
+  totalUsageCount: number;
+  startsAt: string | null;
+  endsAt: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCouponPayload {
+  code: string;
+  description?: string;
+  discountType: CouponType;
+  discountValue: number;
+  minCartValue?: number;
+  maxDiscount?: number;
+  perCustomerCap?: number;
+  totalUsageCap?: number;
+  startsAt?: string;
+  endsAt?: string;
+  isActive?: boolean;
+}
+
+// ── Metal rates ────────────────────────────────────────────────────────
+
+export interface RateEntry {
+  metal: Metal;
+  purity: Purity;
+  ratePerGram: number;
+  previousRate: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+export interface TodayRates {
+  date: string;
+  rates: RateEntry[];
+}
+
+export interface UpsertRateItem {
+  metal: Metal;
+  purity: Purity;
+  ratePerGram: number;
+}

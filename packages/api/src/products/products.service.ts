@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { Prisma, PricingMode, Product } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SalesService } from '../sales/sales.service';
+import { MetalRatesService } from '../metal-rates/metal-rates.service';
 import {
   BulkCategoryDto,
   BulkDiscountDto,
@@ -22,16 +23,23 @@ export class ProductsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly salesService: SalesService,
+    private readonly metalRatesService: MetalRatesService,
   ) {}
 
   private async serializeMany(items: ProductWithCategory[]) {
-    const activeMap = await this.salesService.getActiveDiscountsForProducts(items.map((p) => p.id));
-    return items.map((p) => serializeProduct(p, undefined, activeMap.get(p.id) ?? null));
+    const [activeMap, rateMap] = await Promise.all([
+      this.salesService.getActiveDiscountsForProducts(items.map((p) => p.id)),
+      this.metalRatesService.getRateMap(),
+    ]);
+    return items.map((p) => serializeProduct(p, undefined, activeMap.get(p.id) ?? null, rateMap));
   }
 
   private async serializeOne(p: ProductWithCategory) {
-    const active = await this.salesService.getActiveDiscountForProduct(p.id);
-    return serializeProduct(p, undefined, active);
+    const [active, rateMap] = await Promise.all([
+      this.salesService.getActiveDiscountForProduct(p.id),
+      this.metalRatesService.getRateMap(),
+    ]);
+    return serializeProduct(p, undefined, active, rateMap);
   }
 
   // ── Public ──────────────────────────────────────────────────────────

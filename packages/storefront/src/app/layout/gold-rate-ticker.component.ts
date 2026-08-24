@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { MetalRatesService } from '../data/metal-rates.service';
+import { RateEntry } from '../data/api.types';
 
-interface Rate { label: string; value: number; unit: string; direction: 'up' | 'down' | 'flat' }
+interface TickerRow { label: string; value: number; unit: string; direction: 'up' | 'down' | 'flat' }
 
-// Phase 1: static rates (matches API pricing fallback). Phase 2: wire to /api/public/gold-rate.
+// Which combos actually appear on the ticker (in this order).
+const SHOW: Array<{ metal: RateEntry['metal']; purity: RateEntry['purity']; label: string; unit: string }> = [
+  { metal: 'GOLD',   purity: 'K22', label: 'Gold 22K', unit: 'g' },
+  { metal: 'GOLD',   purity: 'K24', label: 'Gold 24K', unit: 'g' },
+  { metal: 'SILVER', purity: 'K24', label: 'Silver',   unit: 'g' },
+];
+
 @Component({
   selector: 'sf-gold-rate-ticker',
   standalone: true,
@@ -12,7 +21,7 @@ interface Rate { label: string; value: number; unit: string; direction: 'up' | '
   template: `
     <aside role="region" aria-label="Live metal rates" class="bg-bg-muted text-body-sm text-ink-muted border-b border-line">
       <div class="container-page flex items-center gap-xl overflow-x-auto py-xs">
-        @for (r of rates; track r.label) {
+        @for (r of rows(); track r.label) {
           <span class="whitespace-nowrap flex items-center gap-xs">
             <span class="uppercase tracking-wide text-caption text-ink-subtle">{{ r.label }}</span>
             <span class="text-ink font-medium num-tabular">₹ {{ r.value | number:'1.0-0' }} /{{ r.unit }}</span>
@@ -30,10 +39,21 @@ interface Rate { label: string; value: number; unit: string; direction: 'up' | '
   `,
 })
 export class GoldRateTickerComponent {
-  // ordering: 22K → 24K → silver
-  readonly rates: Rate[] = [
-    { label: 'Gold 22K', value: 6841, unit: 'g', direction: 'up' },
-    { label: 'Gold 24K', value: 7465, unit: 'g', direction: 'up' },
-    { label: 'Silver',   value:   94, unit: 'g', direction: 'down' },
-  ];
+  private readonly ratesService = inject(MetalRatesService);
+  readonly today = toSignal(this.ratesService.today(), { initialValue: null });
+
+  readonly rows = computed<TickerRow[]>(() => {
+    const t = this.today();
+    if (!t) return [];
+    const byKey = new Map(t.rates.map((r) => [`${r.metal}_${r.purity}`, r]));
+    return SHOW.map((s) => {
+      const r = byKey.get(`${s.metal}_${s.purity}`);
+      return {
+        label: s.label,
+        value: r?.ratePerGram ?? 0,
+        unit: s.unit,
+        direction: r?.direction ?? 'flat',
+      };
+    });
+  });
 }

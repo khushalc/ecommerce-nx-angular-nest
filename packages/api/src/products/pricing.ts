@@ -26,13 +26,19 @@ function toNumber(v: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+/** Rate map: key is `${metal}_${purity}` → per-gram rate in INR. */
+export type RateMap = Map<string, number>;
+export const rateKey = (metal: Metal, purity: Purity) => `${metal}_${purity}`;
+
 export function getMetalRate(metal: Metal, _purity: Purity): number {
-  // Phase 1 fallback. Phase 2: DB lookup.
+  // Static fallback used when caller doesn't pass a live rate map.
   return FALLBACK_RATES[metal];
 }
 
 /**
  * Compute customer-facing price for a product given its category's pricingMode.
+ * When `rateMap` is provided, LIVE_METAL_RATE uses live values from it;
+ * otherwise falls back to the static per-metal defaults.
  */
 export function computeProductPrice(
   product: {
@@ -46,6 +52,7 @@ export function computeProductPrice(
     specialDiscount?: unknown;
   },
   categoryPricingMode: PricingMode,
+  rateMap?: RateMap,
 ): ProductPrice {
   const discountPct = toNumber(product.specialDiscount, 0);
 
@@ -68,11 +75,16 @@ export function computeProductPrice(
     return { pricingMode: 'LIVE_METAL_RATE', listPrice: 0, finalPrice: 0, discountPct, currency: 'INR' };
   }
 
-  const rate = getMetalRate(metal, purity);
+  // Live rate map takes precedence; falls back to the static per-metal default.
+  const liveRate = rateMap?.get(rateKey(metal, purity));
+  const isLiveRatePerPurity = liveRate != null;   // admin set an explicit per-purity rate
+  const rate = liveRate ?? getMetalRate(metal, purity);
+
   const weight = toNumber(product.weightGrams, 0);
   const makingPct = toNumber(product.makingPct, 0);
   const stoneValue = toNumber(product.stoneValue, 0);
-  const purityFactor = metal === Metal.GOLD ? PURITY_FACTOR[purity] : 1;
+  // If the admin set a per-purity rate, the purity is already baked in.
+  const purityFactor = isLiveRatePerPurity ? 1 : (metal === Metal.GOLD ? PURITY_FACTOR[purity] : 1);
 
   const metalValue = rate * weight * purityFactor;
   const makingCharge = metalValue * (makingPct / 100);

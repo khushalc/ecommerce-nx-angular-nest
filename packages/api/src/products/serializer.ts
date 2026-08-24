@@ -3,7 +3,7 @@
 //   - CategoriesService.publicBySlug (products embedded in a category)
 
 import { PricingMode, Product } from '@prisma/client';
-import { computeProductPrice, computeStockDisplay } from './pricing';
+import { computeProductPrice, computeStockDisplay, RateMap } from './pricing';
 
 export type ProductWithMaybeCategory = Product & {
   category?: { id: string; slug: string; name: string; pricingMode: PricingMode } | null;
@@ -19,6 +19,7 @@ export function serializeProduct(
   p: ProductWithMaybeCategory,
   categoryPricingMode?: PricingMode,
   activeSale?: ActiveSaleInfo | null,
+  rateMap?: RateMap,
 ) {
   const mode = p.category?.pricingMode ?? categoryPricingMode;
   if (!mode) {
@@ -32,7 +33,7 @@ export function serializeProduct(
     effectivePct === 0 ? null : saleDiscount >= productDiscount ? 'sale' : 'product';
 
   // computeProductPrice reads `specialDiscount` off the input — swap in the effective %.
-  const price = computeProductPrice({ ...p, specialDiscount: effectivePct }, mode);
+  const price = computeProductPrice({ ...p, specialDiscount: effectivePct }, mode, rateMap);
   const stockDisplay = computeStockDisplay(p.stock, p.lowStockThreshold, p.allowBackorder);
 
   return {

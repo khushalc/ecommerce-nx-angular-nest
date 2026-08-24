@@ -8,6 +8,8 @@ import { AuthModule } from '../auth/auth.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { ProductsModule } from '../products/products.module';
 import { SalesModule } from '../sales/sales.module';
+import { MetalRatesModule } from '../metal-rates/metal-rates.module';
+import { CouponsModule } from '../coupons/coupons.module';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -24,9 +26,11 @@ import { AppService } from './app.service';
     ]),
     PrismaModule,
     AuthModule,
+    MetalRatesModule,
     CategoriesModule,
     ProductsModule,
     SalesModule,
+    CouponsModule,
   ],
   controllers: [AppController],
   providers: [

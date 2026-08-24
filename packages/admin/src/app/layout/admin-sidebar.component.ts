@@ -39,6 +39,8 @@ export class AdminSidebarComponent {
     { label: 'Categories', path: '/categories', icon: '❏', roles: CATALOG },
     { label: 'Products',   path: '/products',   icon: '◆', roles: CATALOG },
     { label: 'Events',     path: '/sales',      icon: '★', roles: CATALOG },
+    { label: 'Coupons',    path: '/coupons',    icon: '%', roles: CATALOG },
+    { label: 'Metal Rates', path: '/metal-rates', icon: '₹', roles: CATALOG },
     { label: 'Orders',     path: '/orders',     icon: '↗', roles: ORDERS },
     { label: 'Customers',  path: '/customers',  icon: '⚇', roles: ['SUPER_ADMIN'] },
     { label: 'Reports',    path: '/reports',    icon: '≣', roles: ['SUPER_ADMIN'] },

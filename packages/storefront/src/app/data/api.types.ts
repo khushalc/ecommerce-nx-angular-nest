@@ -83,6 +83,19 @@ export interface ActiveAnnouncement {
   endsAt: string;
 }
 
+export interface RateEntry {
+  metal: 'GOLD' | 'SILVER' | 'PLATINUM';
+  purity: 'K14' | 'K18' | 'K22' | 'K24';
+  ratePerGram: number;
+  previousRate: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+export interface TodayRates {
+  date: string;
+  rates: RateEntry[];
+}
+
 export interface Paginated<T> {
   items: T[];
   total: number;

@@ -54,6 +54,22 @@ export const appRoutes: Route[] = [
         path: 'sales/:id',
         loadComponent: () => import('./pages/sales/sale-edit.component').then(m => m.SaleEditComponent),
       },
+      {
+        path: 'coupons',
+        loadComponent: () => import('./pages/coupons/coupons-list.component').then(m => m.CouponsListComponent),
+      },
+      {
+        path: 'coupons/new',
+        loadComponent: () => import('./pages/coupons/coupon-edit.component').then(m => m.CouponEditComponent),
+      },
+      {
+        path: 'coupons/:id',
+        loadComponent: () => import('./pages/coupons/coupon-edit.component').then(m => m.CouponEditComponent),
+      },
+      {
+        path: 'metal-rates',
+        loadComponent: () => import('./pages/metal-rates/metal-rates.component').then(m => m.MetalRatesComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
