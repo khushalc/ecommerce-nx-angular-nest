@@ -811,13 +811,15 @@ Critical: prices, discounts, and metal rates all get **snapshotted onto `OrderIt
              ─ docker-compose (Postgres + Redis) + .env.example
              ─ Deploy target docs
 
-  Phase 2  ── Sales, discounts, live gold rate
-             ─ MetalRateDaily + admin "set today's rate" screen
-             ─ Sale + SaleTarget CRUD in admin
-             ─ Coupon CRUD + validation service
-             ─ Storefront: sale badges, price strike-through, /sale page,
-                           /new-arrivals (isFresh)
-             ─ Gold-rate ticker wired to latest MetalRateDaily
+  Phase 2  ── ✅ Sales, discounts, live gold rate  (shipped in Phase-1.5..1.9)
+             ✅ MetalRateDaily + admin "Metal Rates" grid screen
+             ✅ Sale + SaleTarget CRUD in admin (per-product override + banner)
+             ✅ Coupon CRUD + validation service (/public/coupons/validate)
+             ✅ Storefront: sale badges + strike-through pricing on PDP+card
+             ✅ Gold-rate ticker wired to latest MetalRateDaily
+             ─ /sale campaign landing page (deferred)
+             ─ /new-arrivals aggregate page (deferred; individual products
+               already surface via isFresh badge)
 
   Phase 3  ── Customer, cart, checkout, orders, payments
              ─ Customer OTP auth (MSG91)
