@@ -16,6 +16,12 @@ export interface AuthResponse {
   user: AdminUser;
 }
 
+export interface CategoryRef {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface Category {
   id: string;
   slug: string;
@@ -25,7 +31,21 @@ export interface Category {
   heroImageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
-  _count?: { products: number };
+  parentId: string | null;
+  parent?: CategoryRef | null;
+  children?: Category[];
+  _count?: { products: number; children: number };
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  slug: string;
+  description?: string;
+  pricingMode?: PricingMode;   // required only when parentId is null
+  parentId?: string | null;
+  heroImageUrl?: string;
+  sortOrder?: number;
+  isActive?: boolean;
 }
 
 export interface ProductPrice {

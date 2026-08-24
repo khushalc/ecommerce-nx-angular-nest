@@ -1,6 +1,12 @@
 // Public API response shapes returned by the NestJS backend.
 // Kept as loose interfaces so the storefront isn't coupled to @prisma/client types.
 
+export interface CategoryRef {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface CategorySummary {
   id: string;
   slug: string;
@@ -10,10 +16,15 @@ export interface CategorySummary {
   heroImageUrl: string | null;
   sortOrder: number;
   isActive: boolean;
+  parentId: string | null;
+  children?: CategorySummary[];
 }
 
 export interface CategoryWithProducts extends CategorySummary {
+  parent?: CategoryRef | null;
+  children: CategorySummary[];
   products: ProductSummary[];
+  isLeaf: boolean;
 }
 
 export interface ProductPrice {

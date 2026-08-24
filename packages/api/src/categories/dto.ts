@@ -1,4 +1,4 @@
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUrl, Matches, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, IsUrl, Matches, MaxLength, Min, MinLength } from 'class-validator';
 import { PricingMode } from '@prisma/client';
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -18,8 +18,14 @@ export class CreateCategoryDto {
   @MaxLength(400)
   description?: string;
 
+  // Ignored when parentId is set — sub-categories inherit from parent.
+  @IsOptional()
   @IsEnum(PricingMode)
-  pricingMode!: PricingMode;
+  pricingMode?: PricingMode;
+
+  @IsOptional()
+  @IsUUID()
+  parentId?: string;
 
   @IsOptional()
   @IsUrl()
@@ -40,6 +46,7 @@ export class UpdateCategoryDto {
   @IsOptional() @IsString() @Matches(SLUG_RE) slug?: string;
   @IsOptional() @IsString() @MaxLength(400) description?: string;
   @IsOptional() @IsEnum(PricingMode) pricingMode?: PricingMode;
+  @IsOptional() @IsUUID() parentId?: string | null;
   @IsOptional() @IsUrl() heroImageUrl?: string;
   @IsOptional() @IsInt() @Min(0) sortOrder?: number;
   @IsOptional() @IsBoolean() isActive?: boolean;

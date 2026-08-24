@@ -7,11 +7,12 @@ import { switchMap, tap } from 'rxjs';
 import { ProductsService } from '../../data/products.service';
 import { SeoService } from '../../seo/seo.service';
 import { MoneyPipe } from '../../shared/money.pipe';
+import { ProductGalleryComponent } from '../../shared/product-gallery.component';
 
 @Component({
   selector: 'sf-product',
   standalone: true,
-  imports: [RouterLink, MoneyPipe, DecimalPipe],
+  imports: [RouterLink, MoneyPipe, DecimalPipe, ProductGalleryComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let p = product();
@@ -27,14 +28,8 @@ import { MoneyPipe } from '../../shared/money.pipe';
         </nav>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-2xl">
-          <!-- Gallery -->
-          <div class="grid grid-cols-1 gap-sm">
-            @for (img of p.images; track $index; let first = $first) {
-              <div class="aspect-[4/5] bg-bg-muted overflow-hidden border border-line">
-                <img [src]="img" [alt]="p.name" [loading]="first ? 'eager' : 'lazy'" class="w-full h-full object-cover" />
-              </div>
-            }
-          </div>
+          <!-- Gallery (carousel with prev/next, thumbs, swipe, keyboard) -->
+          <sf-product-gallery [images]="p.images" [alt]="p.name" />
 
           <!-- Info -->
           <div class="md:sticky md:top-lg h-fit">

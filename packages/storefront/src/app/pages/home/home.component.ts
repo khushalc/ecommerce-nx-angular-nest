@@ -33,8 +33,8 @@ import { ProductCardComponent } from '../../shared/product-card.component';
         </div>
         <div class="aspect-[4/5] bg-bg-elevated relative overflow-hidden border border-line">
           <img
-            src="https://picsum.photos/seed/hero/1000/1250"
-            alt="Featured jewelry"
+            src="https://placehold.co/1000x1250/F1EADD/1F1B16?text=Autumn%0ACollection&font=playfair-display"
+            alt="Autumn Collection featured jewelry"
             class="w-full h-full object-cover" />
         </div>
       </div>
@@ -49,14 +49,20 @@ import { ProductCardComponent } from '../../shared/product-card.component';
       <div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
         @for (c of categories(); track c.slug) {
           <a [routerLink]="'/c/' + c.slug" class="group block">
-            <div class="aspect-[3/4] bg-bg-muted overflow-hidden">
-              @if (c.heroImageUrl) {
-                <img [src]="c.heroImageUrl" [alt]="c.name" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
-              }
-            </div>
-            <div class="mt-sm">
-              <h3 class="text-h4 text-ink group-hover:text-gold transition">{{ c.name }}</h3>
-              <p class="text-body-sm text-ink-muted line-clamp-2">{{ c.description }}</p>
+            <div class="aspect-[4/5] bg-bg-muted overflow-hidden relative flex items-end p-lg
+                        border border-line group-hover:border-gold-soft transition">
+              <div class="relative z-10">
+                <p class="text-caption uppercase tracking-wide text-ink-muted mb-xs">Shop</p>
+                <h3 class="text-h2 text-ink font-serif group-hover:text-gold transition">
+                  {{ c.name }}
+                </h3>
+                <p class="text-body-sm text-ink-muted mt-xs line-clamp-2 max-w-[24ch]">
+                  {{ c.description }}
+                </p>
+                <span class="inline-block mt-md text-caption uppercase tracking-wide text-gold group-hover:translate-x-1 transition">
+                  Explore →
+                </span>
+              </div>
             </div>
           </a>
         }

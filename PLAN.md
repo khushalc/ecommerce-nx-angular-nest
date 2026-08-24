@@ -393,7 +393,7 @@ Full model documented up front so migrations don't have to be rewritten. Phase 1
 | Entity | Purpose | Phase |
 |---|---|---|
 | **AdminUser** | Admin login + RBAC | 1 |
-| **Category** | Taxonomy, `pricingMode`, hero image | 1 |
+| **Category** | Taxonomy tree (parent + sub-cats, 2 levels), `pricingMode`, hero image | 1 |
 | **Product** | SKU, images, stock, pricing fields (both modes), `isFresh`, `specialDiscount` | 1 |
 | Customer | Storefront account (phone-first) | 2 |
 | Address | Customer shipping addresses | 2/3 |
@@ -428,12 +428,21 @@ model Category {
   slug          String       @unique
   name          String
   description   String?
-  pricingMode   PricingMode
+  pricingMode   PricingMode                     // inherited from parent when parentId is set
   heroImageUrl  String?
+  sortOrder     Int          @default(0)
   isActive      Boolean      @default(true)
-  products      Product[]
+
+  // Hierarchy (2-level cap enforced at the service layer)
+  parent        Category?    @relation("CategoryTree", fields: [parentId], references: [id])
+  parentId      String?
+  children      Category[]   @relation("CategoryTree")
+
+  products      Product[]                       // only populated for leaf categories
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+
+  @@index([parentId, sortOrder])
 }
 
 model Product {
@@ -466,6 +475,48 @@ model Product {
 ```
 
 (Order/Payment/Shipment prisma sketches in §8.)
+
+### 7.3 Category hierarchy rules
+
+Categories form a **2-level tree**: root categories (no parent) → sub-categories (parent set to a root). Deeper nesting is blocked at the service layer even though the self-relation is technically unlimited.
+
+```
+   Gold Jewelry         (root, pricingMode = LIVE_METAL_RATE)
+   ├── Wedding Rings    (sub, inherits LIVE_METAL_RATE)     ← products live here
+   ├── Casual Rings     (sub, inherits LIVE_METAL_RATE)     ← products live here
+   └── Necklaces        (sub, inherits LIVE_METAL_RATE)     ← products live here
+
+   Diamond Jewelry      (root, pricingMode = FIXED_MRP)
+   ├── Solitaires       (sub, inherits FIXED_MRP)           ← products live here
+   └── Bracelets        (sub, inherits FIXED_MRP)           ← products live here
+
+   Silver               (root, pricingMode = LIVE_METAL_RATE)     ← products live here
+                                                            (leaf root; no sub-cats yet)
+```
+
+**Rules enforced in `CategoriesService`:**
+
+- `parentId` must reference a category whose own `parentId` is `null` (2-level cap).
+- When `parentId` is set, `pricingMode` is copied from the parent on create and locked on update (the admin form hides the field for sub-categories).
+- A category cannot be deleted (soft-deactivated only) if it has active children — deactivate children first.
+- Slugs remain **globally unique** across the whole tree, so URLs stay flat: `/c/wedding-rings` works from anywhere.
+
+**Rules enforced in `ProductsService`:**
+
+- A product's `categoryId` must reference a **leaf** category (`children.length === 0`). If a category grows children later, existing products stay put but new ones can no longer be created there.
+- Listing a root category's `/api/public/products?category=<root-slug>` returns the **aggregated** products across all its leaf children (Phase 2 improvement; Phase 1 returns empty for roots-with-children).
+
+**Storefront rendering** (per §5 / §11):
+
+- Home category grid shows **root categories only** (`WHERE parentId IS NULL`).
+- Category page for a root with children shows a **sub-category chip row** at the top and no direct products; each chip navigates to the sub-category page.
+- Category page for a leaf shows the product grid as usual.
+
+**Admin surfaces** (per §6):
+
+- Categories list renders as a **tree** — root rows with their children indented one level.
+- Category form has a `parent` dropdown showing only roots (categories with `parentId === null`); leaves the field empty to create a new root.
+- Product form's category dropdown filters to **leaf categories only** and groups them under their parent for scanability.
 
 ---
 

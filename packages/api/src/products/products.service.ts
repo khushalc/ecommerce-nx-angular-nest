@@ -86,7 +86,7 @@ export class ProductsService {
   }
 
   async create(dto: CreateProductDto) {
-    await this.assertCategoryExists(dto.categoryId);
+    await this.assertCategoryIsLeaf(dto.categoryId);
     this.assertPricingFieldsPresent(dto);
 
     try {
@@ -108,7 +108,7 @@ export class ProductsService {
 
   async update(id: string, dto: UpdateProductDto) {
     await this.findById(id);
-    if (dto.categoryId) await this.assertCategoryExists(dto.categoryId);
+    if (dto.categoryId) await this.assertCategoryIsLeaf(dto.categoryId);
 
     try {
       const updated = await this.prisma.product.update({
@@ -132,9 +132,17 @@ export class ProductsService {
 
   // ── Helpers ─────────────────────────────────────────────────────────
 
-  private async assertCategoryExists(categoryId: string) {
-    const c = await this.prisma.category.findUnique({ where: { id: categoryId } });
+  private async assertCategoryIsLeaf(categoryId: string) {
+    const c = await this.prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { _count: { select: { children: true } } },
+    });
     if (!c) throw new NotFoundException(`Category ${categoryId} not found`);
+    if (c._count.children > 0) {
+      throw new BadRequestException(
+        `Category "${c.name}" has sub-categories — products must be assigned to a leaf sub-category.`,
+      );
+    }
     return c;
   }
 

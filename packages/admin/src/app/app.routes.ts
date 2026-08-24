@@ -34,6 +34,14 @@ export const appRoutes: Route[] = [
         path: 'categories',
         loadComponent: () => import('./pages/categories/categories-list.component').then(m => m.CategoriesListComponent),
       },
+      {
+        path: 'categories/new',
+        loadComponent: () => import('./pages/categories/category-edit.component').then(m => m.CategoryEditComponent),
+      },
+      {
+        path: 'categories/:id',
+        loadComponent: () => import('./pages/categories/category-edit.component').then(m => m.CategoryEditComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },
