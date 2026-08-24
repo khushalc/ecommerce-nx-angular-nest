@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Matches, Max, MaxLength, Min, MinLength } from 'class-validator';
 import { Metal, Purity } from '@prisma/client';
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -56,6 +56,31 @@ export class UpdateProductDto {
 export class UploadUrlRequestDto {
   @IsString() filename!: string;
   @IsString() @Matches(/^image\/(png|jpe?g|webp)$/) contentType!: string;
+}
+
+// ─── Bulk actions ──────────────────────────────────────────────────
+
+export class BulkDiscountDto {
+  @IsArray() @ArrayNotEmpty() @IsUUID('all', { each: true }) productIds!: string[];
+  @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) @Max(90) pct!: number;
+}
+
+export class BulkIdsDto {
+  @IsArray() @ArrayNotEmpty() @IsUUID('all', { each: true }) productIds!: string[];
+}
+
+export class BulkFlagDto {
+  @IsArray() @ArrayNotEmpty() @IsUUID('all', { each: true }) productIds!: string[];
+  @IsBoolean() value!: boolean;
+}
+
+export class BulkCategoryDto {
+  @IsArray() @ArrayNotEmpty() @IsUUID('all', { each: true }) productIds!: string[];
+  @IsUUID() categoryId!: string;
+}
+
+export interface BulkResult {
+  updated: number;
 }
 
 export interface UploadUrlResponse {

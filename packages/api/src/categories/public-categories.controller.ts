@@ -1,6 +1,8 @@
 import { Controller, Get, Param } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CategoriesService } from './categories.service';
 
+@SkipThrottle()
 @Controller('public/categories')
 export class PublicCategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}

@@ -2,7 +2,10 @@ import { Body, Controller, DefaultValuePipe, Delete, Get, HttpCode, HttpStatus, 
 import { AdminRole } from '@prisma/client';
 import { ProductsService } from './products.service';
 import { UploadsService } from './uploads.service';
-import { CreateProductDto, UpdateProductDto, UploadUrlRequestDto } from './dto';
+import {
+  BulkCategoryDto, BulkDiscountDto, BulkFlagDto, BulkIdsDto,
+  CreateProductDto, UpdateProductDto, UploadUrlRequestDto,
+} from './dto';
 import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { Roles } from '../common/decorators';
 
@@ -50,5 +53,37 @@ export class AdminProductsController {
   @HttpCode(HttpStatus.OK)
   uploadUrl(@Body() dto: UploadUrlRequestDto) {
     return this.uploadsService.createPresignedUpload(dto);
+  }
+
+  // ── Bulk actions ────────────────────────────────────────────────────
+
+  @Post('bulk/discount')
+  @HttpCode(HttpStatus.OK)
+  bulkDiscount(@Body() dto: BulkDiscountDto) {
+    return this.productsService.bulkSetDiscount(dto);
+  }
+
+  @Post('bulk/discount/clear')
+  @HttpCode(HttpStatus.OK)
+  bulkClearDiscount(@Body() dto: BulkIdsDto) {
+    return this.productsService.bulkClearDiscount(dto);
+  }
+
+  @Post('bulk/fresh')
+  @HttpCode(HttpStatus.OK)
+  bulkFresh(@Body() dto: BulkFlagDto) {
+    return this.productsService.bulkSetFresh(dto);
+  }
+
+  @Post('bulk/active')
+  @HttpCode(HttpStatus.OK)
+  bulkActive(@Body() dto: BulkFlagDto) {
+    return this.productsService.bulkSetActive(dto);
+  }
+
+  @Post('bulk/category')
+  @HttpCode(HttpStatus.OK)
+  bulkCategory(@Body() dto: BulkCategoryDto) {
+    return this.productsService.bulkChangeCategory(dto);
   }
 }

@@ -1,6 +1,8 @@
 import { Controller, DefaultValuePipe, Get, Param, ParseBoolPipe, ParseIntPipe, Query } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ProductsService } from './products.service';
 
+@SkipThrottle()
 @Controller('public/products')
 export class PublicProductsController {
   constructor(private readonly productsService: ProductsService) {}

@@ -1,16 +1,23 @@
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { AnnouncementsService } from '../data/announcements.service';
 
 @Component({
   selector: 'sf-announcement-bar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (visible()) {
+    @let a = announcement();
+    @if (a && visible()) {
       <aside role="region" aria-label="Announcement" class="bg-ink text-bg text-caption">
         <div class="container-page flex items-center gap-md py-sm">
           <p class="flex-1 text-center uppercase tracking-wide">
-            Diwali sale live — up to 20% off making charges.
-            <a href="/c/gold-rings" class="underline decoration-gold-soft underline-offset-4 hover:text-gold-soft transition">Shop now →</a>
+            {{ a.bannerLabel }}
+            @if (a.ctaLabel && a.ctaHref) {
+              <a [href]="a.ctaHref" class="underline decoration-gold-soft underline-offset-4 hover:text-gold-soft transition ml-sm">
+                {{ a.ctaLabel }} →
+              </a>
+            }
           </p>
           <button
             type="button"
@@ -25,6 +32,9 @@ import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
   `,
 })
 export class AnnouncementBarComponent {
-  visible = signal(true);
+  private readonly announcementsService = inject(AnnouncementsService);
+  readonly announcement = toSignal(this.announcementsService.active(), { initialValue: null });
+  readonly visible = signal(true);
+
   dismiss() { this.visible.set(false); }
 }

@@ -398,8 +398,8 @@ Full model documented up front so migrations don't have to be rewritten. Phase 1
 | Customer | Storefront account (phone-first) | 2 |
 | Address | Customer shipping addresses | 2/3 |
 | MetalRateDaily | Daily gold/silver rate rows; latest used in ticker + LIVE pricing | 2 |
-| Sale | Time-bound campaign (window + discount) | 2 |
-| SaleTarget | M2M linking `Sale` to `Category` or `Product` | 2 |
+| Sale | Time-bound campaign: banner content + optional per-product discounts | 1.5 |
+| SaleTarget | Links a `Sale` to a `Product` with optional per-product `discountPctOverride` | 1.5 |
 | Coupon | Codes with rules (min cart, category, cap) | 2 |
 | Cart / CartItem | Persistent cart per customer + guest sessionId | 3 |
 | Order / OrderItem | Placed orders + line snapshots | 3 |
@@ -475,6 +475,67 @@ model Product {
 ```
 
 (Order/Payment/Shipment prisma sketches in §8.)
+
+### 7.2b Sale (event) rules — enhanced from initial Phase-2 sketch
+
+A `Sale` is a **time-bound admin-controlled event**. Two orthogonal things a sale does:
+
+1. **Banner** — appears in the storefront's announcement strip while the sale is active. Content: `bannerLabel`, optional `bannerImageUrl`, optional CTA (`ctaLabel` + `ctaHref`).
+2. **Pricing** — each product linked via `SaleTarget` gets a discount for the duration of the sale. Rules:
+   - `Sale.defaultDiscountPct` sets a fallback rate for every linked product.
+   - Each `SaleTarget.discountPctOverride` (nullable) beats the default for that specific product. So Product A can be 80% off while Product B is 50% off in the same sale.
+   - `Sale.maxDiscountPerCart` caps how much of the discount can be applied to a single cart (in ₹). Stored now, **enforced at checkout in Phase 3**.
+   - Product-scoped `Product.specialDiscount` and sale-scoped `SaleTarget` discounts don't stack — the **larger** of the two wins per product.
+
+**Banner selection**: if multiple sales are active in the same window, the one with the **most recent `createdAt`** takes the announcement bar. Simple, no priority field.
+
+**Bulk operations on products** — general-purpose, live on `/admin/products` (independent of sales):
+   - Bulk set / clear special discount %
+   - Bulk mark / unmark fresh
+   - Bulk activate / deactivate
+   - Bulk change category (must remain in a leaf per §7.3)
+
+The **sale editor** on `/admin/sales/:id` reuses the same product filter picker to assign products to a sale + specify per-product `discountPctOverride` inline.
+
+```prisma
+model Sale {
+  id                 String     @id @default(uuid())
+  name               String
+  slug               String     @unique
+  description        String?
+  startsAt           DateTime
+  endsAt             DateTime
+  isActive           Boolean    @default(true)
+
+  // Banner
+  bannerImageUrl     String?
+  bannerLabel        String?    // "Diwali Sale — up to 20% off"
+  ctaLabel           String?    // "Shop now"
+  ctaHref            String?    // "/c/gold-rings"
+  showInBanner       Boolean    @default(true)
+
+  // Pricing
+  defaultDiscountPct Decimal?   @db.Decimal(5,2)
+  maxDiscountPerCart Decimal?   @db.Decimal(12,2)
+
+  targets            SaleTarget[]
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model SaleTarget {
+  sale                Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId              String
+  product             Product  @relation(fields: [productId], references: [id])
+  productId           String
+  discountPctOverride Decimal? @db.Decimal(5,2)   // null → use Sale.defaultDiscountPct
+
+  @@id([saleId, productId])
+  @@index([productId])
+}
+```
 
 ### 7.3 Category hierarchy rules
 

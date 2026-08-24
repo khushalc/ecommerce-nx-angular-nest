@@ -81,6 +81,7 @@ export interface Product {
   specialDiscount: number;
   price: ProductPrice;
   stockDisplay: StockDisplay;
+  sale: { id: string; name: string; discountPct: number } | null;
 }
 
 export interface Paginated<T> { items: T[]; total: number; }
@@ -104,4 +105,64 @@ export interface CreateProductPayload {
   weightGrams?: number;
   makingPct?: number;
   stoneValue?: number;
+}
+
+export interface Sale {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+  bannerImageUrl: string | null;
+  bannerLabel: string | null;
+  ctaLabel: string | null;
+  ctaHref: string | null;
+  showInBanner: boolean;
+  defaultDiscountPct: number | null;
+  maxDiscountPerCart: number | null;
+  createdAt: string;
+  updatedAt: string;
+  _count?: { targets: number };
+  targets?: SaleTarget[];
+}
+
+export interface SaleTarget {
+  saleId: string;
+  productId: string;
+  discountPctOverride: number | null;
+  product?: {
+    id: string;
+    slug: string;
+    sku: string;
+    name: string;
+    images: string[];
+    category: { id: string; slug: string; name: string; pricingMode: PricingMode };
+  };
+}
+
+export interface CreateSalePayload {
+  name: string;
+  slug: string;
+  description?: string;
+  startsAt: string;
+  endsAt: string;
+  isActive?: boolean;
+  bannerImageUrl?: string;
+  bannerLabel?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+  showInBanner?: boolean;
+  defaultDiscountPct?: number;
+  maxDiscountPerCart?: number;
+}
+
+export interface SaleTargetInput {
+  productId: string;
+  discountPctOverride?: number | null;
+}
+
+export interface BulkResult {
+  updated: number;
 }

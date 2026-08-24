@@ -41,4 +41,26 @@ export class ProductsService {
       { filename, contentType },
     );
   }
+
+  // ── Bulk actions ────────────────────────────────────────────────────
+
+  bulkSetDiscount(productIds: string[], pct: number) {
+    return this.http.post<{ updated: number }>(`${this.base}/admin/products/bulk/discount`, { productIds, pct });
+  }
+
+  bulkClearDiscount(productIds: string[]) {
+    return this.http.post<{ updated: number }>(`${this.base}/admin/products/bulk/discount/clear`, { productIds });
+  }
+
+  bulkSetFresh(productIds: string[], value: boolean) {
+    return this.http.post<{ updated: number }>(`${this.base}/admin/products/bulk/fresh`, { productIds, value });
+  }
+
+  bulkSetActive(productIds: string[], value: boolean) {
+    return this.http.post<{ updated: number }>(`${this.base}/admin/products/bulk/active`, { productIds, value });
+  }
+
+  bulkChangeCategory(productIds: string[], categoryId: string) {
+    return this.http.post<{ updated: number }>(`${this.base}/admin/products/bulk/category`, { productIds, categoryId });
+  }
 }

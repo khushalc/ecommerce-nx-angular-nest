@@ -69,6 +69,18 @@ export interface ProductSummary {
   specialDiscount: number;
   price: ProductPrice;
   stockDisplay: StockDisplay;
+  sale: { id: string; name: string; discountPct: number } | null;
+}
+
+export interface ActiveAnnouncement {
+  id: string;
+  name: string;
+  bannerLabel: string;
+  bannerImageUrl: string | null;
+  ctaLabel: string | null;
+  ctaHref: string | null;
+  startsAt: string;
+  endsAt: string;
 }
 
 export interface Paginated<T> {

@@ -38,6 +38,13 @@ import { ProductGalleryComponent } from '../../shared/product-gallery.component'
             </p>
             <h1 class="text-h1 text-ink mb-md">{{ p.name }}</h1>
 
+            <!-- Sale banner tag (if this product is in an active sale) -->
+            @if (p.sale; as s) {
+              <p class="text-caption uppercase tracking-wide text-danger mb-sm">
+                ★ {{ s.name }} — {{ s.discountPct }}% off
+              </p>
+            }
+
             <!-- Price -->
             <div class="flex items-baseline gap-md mb-md">
               <span class="text-display text-ink num-tabular">{{ p.price.finalPrice | money }}</span>

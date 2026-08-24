@@ -42,6 +42,18 @@ export const appRoutes: Route[] = [
         path: 'categories/:id',
         loadComponent: () => import('./pages/categories/category-edit.component').then(m => m.CategoryEditComponent),
       },
+      {
+        path: 'sales',
+        loadComponent: () => import('./pages/sales/sales-list.component').then(m => m.SalesListComponent),
+      },
+      {
+        path: 'sales/new',
+        loadComponent: () => import('./pages/sales/sale-edit.component').then(m => m.SaleEditComponent),
+      },
+      {
+        path: 'sales/:id',
+        loadComponent: () => import('./pages/sales/sale-edit.component').then(m => m.SaleEditComponent),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

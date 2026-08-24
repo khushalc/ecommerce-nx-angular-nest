@@ -1,7 +1,16 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, PricingMode, Product } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './dto';
+import { SalesService } from '../sales/sales.service';
+import {
+  BulkCategoryDto,
+  BulkDiscountDto,
+  BulkFlagDto,
+  BulkIdsDto,
+  BulkResult,
+  CreateProductDto,
+  UpdateProductDto,
+} from './dto';
 import { serializeProduct } from './serializer';
 
 type ProductWithCategory = Product & {
@@ -10,10 +19,19 @@ type ProductWithCategory = Product & {
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly salesService: SalesService,
+  ) {}
 
-  private serialize(p: ProductWithCategory) {
-    return serializeProduct(p);
+  private async serializeMany(items: ProductWithCategory[]) {
+    const activeMap = await this.salesService.getActiveDiscountsForProducts(items.map((p) => p.id));
+    return items.map((p) => serializeProduct(p, undefined, activeMap.get(p.id) ?? null));
+  }
+
+  private async serializeOne(p: ProductWithCategory) {
+    const active = await this.salesService.getActiveDiscountForProduct(p.id);
+    return serializeProduct(p, undefined, active);
   }
 
   // ── Public ──────────────────────────────────────────────────────────
@@ -36,7 +54,7 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return { items: items.map((p) => this.serialize(p as ProductWithCategory)), total };
+    return { items: await this.serializeMany(items as ProductWithCategory[]), total };
   }
 
   async publicBySlug(slug: string) {
@@ -45,7 +63,7 @@ export class ProductsService {
       include: { category: { select: { id: true, slug: true, name: true, pricingMode: true } } },
     });
     if (!product) throw new NotFoundException(`Product "${slug}" not found`);
-    return this.serialize(product as ProductWithCategory);
+    return this.serializeOne(product as ProductWithCategory);
   }
 
   // ── Admin ───────────────────────────────────────────────────────────
@@ -73,7 +91,7 @@ export class ProductsService {
       }),
       this.prisma.product.count({ where }),
     ]);
-    return { items: items.map((p) => this.serialize(p as ProductWithCategory)), total };
+    return { items: await this.serializeMany(items as ProductWithCategory[]), total };
   }
 
   async findById(id: string) {
@@ -82,7 +100,7 @@ export class ProductsService {
       include: { category: { select: { id: true, slug: true, name: true, pricingMode: true } } },
     });
     if (!product) throw new NotFoundException(`Product ${id} not found`);
-    return this.serialize(product as ProductWithCategory);
+    return this.serializeOne(product as ProductWithCategory);
   }
 
   async create(dto: CreateProductDto) {
@@ -91,13 +109,10 @@ export class ProductsService {
 
     try {
       const created = await this.prisma.product.create({
-        data: {
-          ...dto,
-          images: dto.images ?? [],
-        },
+        data: { ...dto, images: dto.images ?? [] },
         include: { category: { select: { id: true, slug: true, name: true, pricingMode: true } } },
       });
-      return this.serialize(created as ProductWithCategory);
+      return this.serializeOne(created as ProductWithCategory);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new ConflictException('Duplicate slug or SKU');
@@ -116,7 +131,7 @@ export class ProductsService {
         data: dto,
         include: { category: { select: { id: true, slug: true, name: true, pricingMode: true } } },
       });
-      return this.serialize(updated as ProductWithCategory);
+      return this.serializeOne(updated as ProductWithCategory);
     } catch (e) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         throw new ConflictException('Duplicate slug or SKU');
@@ -128,6 +143,50 @@ export class ProductsService {
   async remove(id: string) {
     await this.findById(id);
     return this.prisma.product.update({ where: { id }, data: { isActive: false } });
+  }
+
+  // ── Bulk actions ────────────────────────────────────────────────────
+
+  async bulkSetDiscount(dto: BulkDiscountDto): Promise<BulkResult> {
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: dto.productIds } },
+      data: { specialDiscount: dto.pct },
+    });
+    return { updated: res.count };
+  }
+
+  async bulkClearDiscount(dto: BulkIdsDto): Promise<BulkResult> {
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: dto.productIds } },
+      data: { specialDiscount: 0 },
+    });
+    return { updated: res.count };
+  }
+
+  async bulkSetFresh(dto: BulkFlagDto): Promise<BulkResult> {
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: dto.productIds } },
+      data: { isFresh: dto.value },
+    });
+    return { updated: res.count };
+  }
+
+  async bulkSetActive(dto: BulkFlagDto): Promise<BulkResult> {
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: dto.productIds } },
+      data: { isActive: dto.value },
+    });
+    return { updated: res.count };
+  }
+
+  async bulkChangeCategory(dto: BulkCategoryDto): Promise<BulkResult> {
+    // Guard: destination must be a leaf category
+    await this.assertCategoryIsLeaf(dto.categoryId);
+    const res = await this.prisma.product.updateMany({
+      where: { id: { in: dto.productIds } },
+      data: { categoryId: dto.categoryId },
+    });
+    return { updated: res.count };
   }
 
   // ── Helpers ─────────────────────────────────────────────────────────
@@ -147,8 +206,6 @@ export class ProductsService {
   }
 
   private assertPricingFieldsPresent(dto: CreateProductDto) {
-    // Enforced only when caller provides mode via categoryId's pricingMode is authoritative,
-    // but we still sanity-check that mrp OR live-metal fields are set.
     const hasMrp = dto.mrp != null;
     const hasLive = dto.metal && dto.purity && dto.weightGrams != null;
     if (!hasMrp && !hasLive) {

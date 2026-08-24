@@ -118,7 +118,6 @@ model Category {
   updatedAt     DateTime     @updatedAt
 
   products      Product[]                                   // only leaf categories should have products
-  saleTargets   SaleTarget[]
 
   @@index([isActive, sortOrder])
   @@index([parentId, sortOrder])
@@ -183,34 +182,40 @@ model MetalRateDaily {
 // ─── Sales & coupons (Phase 2) ──────────────────────────────────────────
 
 model Sale {
-  id            String       @id @default(uuid())
-  name          String
-  slug          String       @unique
-  description   String?
-  startsAt      DateTime
-  endsAt        DateTime
-  discountType  String       // "PERCENT" | "FLAT"
-  discountValue Decimal      @db.Decimal(12, 2)
-  isActive      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id                 String       @id @default(uuid())
+  name               String
+  slug               String       @unique
+  description        String?
+  startsAt           DateTime
+  endsAt             DateTime
+  isActive           Boolean      @default(true)
 
-  targets       SaleTarget[]
+  // Banner content (drives storefront announcement bar when active)
+  bannerImageUrl     String?
+  bannerLabel        String?
+  ctaLabel           String?
+  ctaHref            String?
+  showInBanner       Boolean      @default(true)
+
+  // Pricing — PERCENT-only. SaleTarget.discountPctOverride wins per-product.
+  defaultDiscountPct Decimal?     @db.Decimal(5, 2)
+  maxDiscountPerCart Decimal?     @db.Decimal(12, 2)  // Phase 3: enforced at checkout
+
+  targets            SaleTarget[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
   @@index([isActive, startsAt, endsAt])
 }
 
 model SaleTarget {
-  id          String    @id @default(uuid())
-  sale        Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  saleId      String
-  category    Category? @relation(fields: [categoryId], references: [id])
-  categoryId  String?
-  product     Product?  @relation(fields: [productId], references: [id])
-  productId   String?
+  sale                Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  saleId              String
+  product             Product  @relation(fields: [productId], references: [id])
+  productId           String
+  discountPctOverride Decimal? @db.Decimal(5, 2)   // null → use Sale.defaultDiscountPct
 
-  @@unique([saleId, categoryId, productId])
-  @@index([categoryId])
+  @@id([saleId, productId])
   @@index([productId])
 }
 

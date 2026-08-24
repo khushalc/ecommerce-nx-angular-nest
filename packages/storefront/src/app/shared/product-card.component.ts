@@ -20,7 +20,9 @@ import { ProductSummary } from '../data/api.types';
         @if (product().isFresh) {
           <span class="absolute top-md left-md badge badge-gold">New</span>
         }
-        @if (product().specialDiscount > 0) {
+        @if (product().sale; as s) {
+          <span class="absolute top-md right-md badge badge-danger" [title]="s.name">−{{ s.discountPct }}%</span>
+        } @else if (product().specialDiscount > 0) {
           <span class="absolute top-md right-md badge badge-danger">−{{ product().specialDiscount }}%</span>
         }
       </div>
